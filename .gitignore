@@ -1,0 +1,22 @@
+# Ignore the virtual environment
+myenv/
+
+# Ignore Python bytecode
+*.pyc
+__pycache__/
+
+# Ignore Django database file
+db.sqlite3
+
+# Ignore media files (upload directory)
+media/
+
+# Ignore static files (if you’re not using static files for version control)
+static/
+
+# Ignore environment configuration files
+.env
+
+# Ignore IDE/editor configurations
+.vscode/
+*.swp
