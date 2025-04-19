@@ -8,12 +8,6 @@ class SignupSerializer(serializers.ModelSerializer):
         fields = ['username', 'email', 'password', 'role']
         extra_kwargs = {'password': {'write_only': True}}
 
-    def validate_email(self, value):
-        
-        if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError("This email is already in use.")
-        return value
-
     def create(self, validated_data):
         user = User.objects.create_user(
             username=validated_data['username'],
@@ -25,28 +19,4 @@ class SignupSerializer(serializers.ModelSerializer):
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
-    password = serializers.CharField()
-
-    def validate(self, data):
-        email = data.get("email")
-        password = data.get("password")
-        try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
-            raise serializers.ValidationError({
-                "message": "User with this email does not exist"
-            })
-
-        user = authenticate(username=user.username, password=password)
-
-        if not user:
-            raise serializers.ValidationError({
-                "message": "Incorrect password"
-            })
-
-        if not user.is_active:
-            raise serializers.ValidationError({
-                "message": "Your account is inactive"
-            })
-
-        return user
+    password = serializers.CharField(write_only=True)
