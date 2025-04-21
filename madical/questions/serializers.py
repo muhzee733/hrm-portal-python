@@ -11,4 +11,4 @@ class PatientQuestionSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = PatientQuestion
-        fields = ['patient', 'question', 'answer']
+        fields = ['patient', 'question', 'answer', 'role', "frist_name"]

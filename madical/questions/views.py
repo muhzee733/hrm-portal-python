@@ -31,6 +31,7 @@ def getQuestions(request):
 def register_patient(request):
     data = request.data
     email = data.get('email')
+    role = data.get('role', 'patient') 
     password = data.get('password')
     full_name = data.get('full_name', '')
     first_name = full_name.split(' ')[0]
@@ -47,11 +48,12 @@ def register_patient(request):
 
     try:
         patient = User.objects.create_user(
-        username=email,
+        username=full_name,
         email=email,
         password=password,
         first_name=first_name,
-        last_name=last_name
+        last_name=last_name,
+        role=role
 )
 
     except Exception as e:
