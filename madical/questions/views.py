@@ -1,6 +1,5 @@
-# views.py
-
 from django.contrib.auth import get_user_model
+User = get_user_model()
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -23,7 +22,6 @@ def create_question(request):
     }, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
 def getQuestions(request):
     questions = Question.objects.all()
     serializer = QuestionSerializer(questions, many=True)
@@ -32,36 +30,53 @@ def getQuestions(request):
 @api_view(['POST'])
 def register_patient(request):
     data = request.data
+    email = data.get('email')
+    password = data.get('password')
+    full_name = data.get('full_name', '')
+    first_name = full_name.split(' ')[0]
+    last_name = ' '.join(full_name.split(' ')[1:]) if len(full_name.split(' ')) > 1 else ''
 
-    # Check if email already exists
-    if get_user_model().objects.filter(email=data['email']).exists():
+    if not email or not password:
+        return Response({"message": "Email and password are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    if User.objects.filter(email=email).exists():
         return Response({"message": "Email already registered!"}, status=status.HTTP_400_BAD_REQUEST)
 
+    if len(password) < 6:
+        return Response({"message": "Password must be at least 6 characters long."}, status=status.HTTP_400_BAD_REQUEST)
+
     try:
-        # Create user (patient)
-        patient = get_user_model().objects.create_user(
-            username=data['username'],
-            email=data['email'],
-            password=data['password']  # Password should be hashed automatically
-        )
+        patient = User.objects.create_user(
+        username=email,
+        email=email,
+        password=password,
+        first_name=first_name,
+        last_name=last_name
+)
+
     except Exception as e:
         return Response({"message": "Error creating patient", "error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Save Patient's Answers to Questions
     try:
         patient_questions = []
-        for q_data in data['questions']:  # Loop through the answers
-            question = Question.objects.get(id=q_data['question_id'])  # Get the question by ID
-            patient_questions.append(PatientQuestion(
-                patient=patient,  # Link to the patient who is answering
-                question=question,  # Link to the question
-                answer=q_data['answer']  # Store the answer provided
-            ))
+        for q_data in data.get('questions', []):
+            question_id = q_data.get('question_id')
+            answer = q_data.get('answer')
 
-        # Bulk save all patient answers
+            patient_question = PatientQuestion(
+                patient=patient, 
+                question_id=question_id, 
+                answer=answer
+            )
+            patient_questions.append(patient_question)
+
+
         PatientQuestion.objects.bulk_create(patient_questions)
-
+            
         return Response({"message": "Patient registered and answers saved successfully!"}, status=status.HTTP_201_CREATED)
 
     except Exception as e:
-        return Response({"message": "Error saving answers", "error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({
+            "message": "Error saving answers",
+            "error": str(e)
+        }, status=status.HTTP_400_BAD_REQUEST)
